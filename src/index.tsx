@@ -1,12 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
+import App from './components/App';
+import {createMuiTheme, CssBaseline, responsiveFontSizes, ThemeProvider} from "@material-ui/core";
 import * as serviceWorker from './serviceWorker';
+
+let theme = createMuiTheme({
+  palette: {
+    type: "dark",
+  }
+})
+theme = responsiveFontSizes(theme);
+
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
