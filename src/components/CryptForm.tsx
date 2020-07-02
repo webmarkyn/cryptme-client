@@ -2,6 +2,13 @@ import React from 'react';
 import {FormControl, Input, InputLabel, TextField, MenuItem, Select, NativeSelect, makeStyles, Button, Box, CircularProgress} from "@material-ui/core";
 import { green } from '@material-ui/core/colors';
 
+type AlgoList = {
+    [key: string]: {
+        keyLength: number,
+        ivLength: number,
+    }
+}
+
 const useStyles = makeStyles((theme) => ({
     formControl: {
         minWidth: 120,
@@ -38,51 +45,61 @@ const useStyles = makeStyles((theme) => ({
 
 export default function CryptForm () {
     const classes = useStyles();
-    const [age, setAge] = React.useState('');
+    const [algo, setAlgo] = React.useState('');
     const [loading, setLoading] = React.useState(true);
     const [success, setSuccess] = React.useState(false);
-
-    const timer = React.useRef<any>();
+    const [algorithms, setAlgorithms] = React.useState<AlgoList>({})
+    const [error, setError] = React.useState(false)
+    const [file, setFile] = React.useState<any | null>(null)
 
     const handleChange = (event: React.ChangeEvent<any>) => {
-        setAge(event.target.value);
+        setAlgo(event.target.value);
     };
 
+    const loadAlgorithms = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/algorithms');
+            const data: AlgoList = await response.json();
+            setAlgorithms(data);
+            setLoading(false);
+        } catch (e) {
+            setError(true)
+            setLoading(false)
+        }
+    }
+
     React.useEffect(() => {
-        return () => {
-          clearTimeout(timer.current);
-        };
+        loadAlgorithms()
       }, []);
 
-    const handleButtonClick = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!loading) {
-            setSuccess(false);
-            setLoading(true);
-            timer.current = setTimeout(() => {
-              setSuccess(true);
-              setLoading(false);
-            }, 2000);
-          }
     }
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length >= 1) {
+            setFile(e.target.files[0])
+        }
+    }
+
+    if (error) return <h2>Error</h2>
 
     if (loading) return <Box className={classes.loadingWrapper}><CircularProgress size={56} className={classes.buttonProgress} /></Box>
 
     return (
         <form style={{display: "flex", flexDirection: "column"}}>
-            <TextField required label="Key" margin="normal" />
-            <TextField required label="Salt" margin="normal"/>
+            <TextField required label={`Key ${ algo ? `(${algorithms[algo].keyLength} characters)`: ''}`} margin="normal" />
+            <TextField required label={`Salt ${ algo ? `(${algorithms[algo].ivLength} characters)`: ''}`} margin="normal"/>
             <FormControl className={classes.formControl}>
                 <InputLabel id="demo-simple-select-label">Encription Algorithm</InputLabel>
                 <Select
                 labelId="demo-simple-select-label"
                 id="demo-simple-select"
-                value={age}
+                value={algo}
                 onChange={handleChange}
                 >
-                <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem>
+                    {Object.keys(algorithms).map(algo => <MenuItem value={algo}>{algo}</MenuItem>)}
                 </Select>
                 {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
             </FormControl>
@@ -91,6 +108,7 @@ export default function CryptForm () {
             multiple 
             type="file" 
             style={{display: 'none'}}
+            onChange={handleFileUpload}
             /> 
             <Box margin={4}>
                 <InputLabel htmlFor="raised-button-file"> 
@@ -105,7 +123,7 @@ export default function CryptForm () {
                 color="primary"
                 className={success ? classes.buttonSuccess : ''}
                 disabled={loading}
-                onClick={handleButtonClick}
+                onClick={handleSubmit}
                 type="submit"
                 >
                 Accept terms
