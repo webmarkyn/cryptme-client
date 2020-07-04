@@ -1,4 +1,5 @@
 import React from 'react';
+import download from "downloadjs";
 import {FormControl, Input, InputLabel, TextField, MenuItem, Select, NativeSelect, makeStyles, Button, Box, CircularProgress} from "@material-ui/core";
 import { green } from '@material-ui/core/colors';
 
@@ -49,8 +50,10 @@ export default function CryptForm () {
     const [loading, setLoading] = React.useState(true);
     const [success, setSuccess] = React.useState(false);
     const [algorithms, setAlgorithms] = React.useState<AlgoList>({})
-    const [error, setError] = React.useState(false)
-    const [file, setFile] = React.useState<any | null>(null)
+    const [error, setError] = React.useState(false);
+    const [file, setFile] = React.useState<File | null>(null);
+    const keyInput = React.useRef<any>();
+    const saltInput = React.useRef<any>();
 
     const handleChange = (event: React.ChangeEvent<any>) => {
         setAlgo(event.target.value);
@@ -60,6 +63,7 @@ export default function CryptForm () {
         setLoading(true);
         try {
             const response = await fetch('http://127.0.0.1:3000/api/algorithms');
+            console.log(response.headers);
             const data: AlgoList = await response.json();
             setAlgorithms(data);
             setLoading(false);
@@ -75,6 +79,18 @@ export default function CryptForm () {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const formData = new FormData();
+        if (!keyInput.current || !saltInput.current || !file) return;
+        const {name, type} = file;
+        const ext = type.split('/').pop();
+        formData.append("key", keyInput.current.value)
+        formData.append("salt", saltInput.current.value)
+        formData.append("algo", algo);
+        formData.append("file", file);
+        fetch('http://127.0.0.1:3000/api/encrypt', {
+            method: "POST",
+            body: formData
+        }).then(res => res.blob()).then(blob => download(blob, `encrypted_${name}`, type));
     }
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,8 +105,8 @@ export default function CryptForm () {
 
     return (
         <form style={{display: "flex", flexDirection: "column"}}>
-            <TextField required label={`Key ${ algo ? `(${algorithms[algo].keyLength} characters)`: ''}`} margin="normal" />
-            <TextField required label={`Salt ${ algo ? `(${algorithms[algo].ivLength} characters)`: ''}`} margin="normal"/>
+            <TextField required inputRef={keyInput} label={`Key ${ algo ? `(${algorithms[algo].keyLength} characters)`: ''}`} margin="normal" />
+            <TextField required inputRef={saltInput} label={`Salt ${ algo ? `(${algorithms[algo].ivLength} characters)`: ''}`} margin="normal"/>
             <FormControl className={classes.formControl}>
                 <InputLabel id="demo-simple-select-label">Encription Algorithm</InputLabel>
                 <Select
@@ -126,7 +142,7 @@ export default function CryptForm () {
                 onClick={handleSubmit}
                 type="submit"
                 >
-                Accept terms
+                Encrypt file!
                 </Button>
                 {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
             </div>

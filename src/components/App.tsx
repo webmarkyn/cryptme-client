@@ -8,7 +8,7 @@ function App() {
   return (
     <div className="App">
       <Container maxWidth="sm">
-        <Typography variant="h1" align="center" color="secondary">CryptMe</Typography>
+        <Typography variant="h1" align="center">CryptMe</Typography>
         <Features />
       </Container>
     </div>
