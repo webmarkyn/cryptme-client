@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '@material-ui/core/Button';
 import {Container, Typography} from "@material-ui/core";
-import Features from './Tabs';
+import Features from './Features';
 
 
 function App() {

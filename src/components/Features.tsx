@@ -10,7 +10,7 @@ export default function Features () {
         setValue(newVal);
     }
     return (
-        <Paper>
+        <div>
             <Tabs value={value} onChange={handleChange} centered>
                 <Tab label="Encrypt" />
                 <Tab label="Decrypt" />
@@ -22,6 +22,6 @@ export default function Features () {
                     <CryptForm />
                 </div>
             </TabPanel>
-        </Paper>
+        </div>
     )
 }
