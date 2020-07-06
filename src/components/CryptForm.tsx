@@ -16,6 +16,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { green, red } from "@material-ui/core/colors";
 import { Validate, SubmitHandler } from "react-hook-form/dist/types/form";
+import useUpdateEffect from "../hooks/useUpdateEffect";
 
 type AlgoList = {
   [key: string]: {
@@ -75,7 +76,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function CryptForm() {
   const classes = useStyles();
-  const [algo, setAlgo] = React.useState("");
+  
   const [loading, setLoading] = React.useState(true);
   const [success, setSuccess] = React.useState(false);
   const [algorithms, setAlgorithms] = React.useState<AlgoList>({});
@@ -87,13 +88,8 @@ export default function CryptForm() {
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
-  const keyInput = React.useRef<any>();
-  const saltInput = React.useRef<any>();
-
-  const handleChange = (event: React.ChangeEvent<any>) => {
-    console.log('hello')
-    setAlgo(event.target.value);
-  };
+  const algoInput = watch("algo");
+  const [algo, setAlgo] = React.useState(algoInput)
 
   const loadAlgorithms = async () => {
     setLoading(true);
@@ -112,10 +108,18 @@ export default function CryptForm() {
     loadAlgorithms();
   }, []);
 
+  useUpdateEffect(() => {
+    setAlgo(algoInput);
+  }, [algoInput])
+
+  useUpdateEffect(() => {
+    if (getValues("key")) trigger("key");
+    if (getValues("salt")) trigger("salt");
+  }, [algo])
+
   const onSubmit: SubmitHandler<FormInputs> = ({key, salt, algo, file}) => {
     const formData = new FormData();
     const { name, type } = file[0];
-    const ext = type.split("/").pop();
     formData.append("key", key);
     formData.append("salt", salt);
     formData.append("algo", algo);
