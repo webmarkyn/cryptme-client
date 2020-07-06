@@ -15,8 +15,10 @@ import {
 } from "@material-ui/core";
 import { useForm, Controller } from "react-hook-form";
 import { green, red } from "@material-ui/core/colors";
-import { Validate, SubmitHandler } from "react-hook-form/dist/types/form";
+import { SubmitHandler } from "react-hook-form/dist/types/form";
 import useUpdateEffect from "../hooks/useUpdateEffect";
+import Alert from '@material-ui/lab/Alert';
+import InfoPopup from "./InfoPopup";
 
 type AlgoList = {
   [key: string]: {
@@ -76,20 +78,27 @@ const useStyles = makeStyles((theme) => ({
 
 export default function CryptForm() {
   const classes = useStyles();
-  
   const [loading, setLoading] = React.useState(true);
-  const [success, setSuccess] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [, setSuccess] = React.useState(false);
+  const [openPopup, setOpenPopup] = React.useState(false);
+  const [uploadingError, setUploadingError] = React.useState(false);
   const [algorithms, setAlgorithms] = React.useState<AlgoList>({});
   const [error, setError] = React.useState(false);
-  const [file, setFile] = React.useState<File | null>(null);
-  const { register, handleSubmit, errors, watch, control, getValues, trigger } = useForm<
-    FormInputs
-  >({
+  const {
+    register,
+    handleSubmit,
+    errors,
+    watch,
+    control,
+    getValues,
+    trigger,
+  } = useForm<FormInputs>({
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
   const algoInput = watch("algo");
-  const [algo, setAlgo] = React.useState(algoInput)
+  const [algo, setAlgo] = React.useState(algoInput);
 
   const loadAlgorithms = async () => {
     setLoading(true);
@@ -110,31 +119,46 @@ export default function CryptForm() {
 
   useUpdateEffect(() => {
     setAlgo(algoInput);
-  }, [algoInput])
+  }, [algoInput]);
 
   useUpdateEffect(() => {
     if (getValues("key")) trigger("key");
     if (getValues("salt")) trigger("salt");
-  }, [algo])
+  }, [algo]);
 
-  const onSubmit: SubmitHandler<FormInputs> = ({key, salt, algo, file}) => {
-    const formData = new FormData();
-    const { name, type } = file[0];
-    formData.append("key", key);
-    formData.append("salt", salt);
-    formData.append("algo", algo);
-    formData.append("file", file[0] as File);
-    fetch("http://127.0.0.1:3000/api/encrypt", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => res.blob())
-      .then((blob) => download(blob, `encrypted_${name}`, type));
+  const onSubmit: SubmitHandler<FormInputs> = async ({
+    key,
+    salt,
+    algo,
+    file,
+  }) => {
+    setUploading(true);
+    setUploadingError(false);
+    try {
+      const formData = new FormData();
+      const { name, type } = file[0];
+      formData.append("key", key);
+      formData.append("salt", salt);
+      formData.append("algo", algo);
+      formData.append("file", file[0] as File);
+      const res = await fetch("http://127.0.0.1:3000/api/encrypt", {
+        method: "POST",
+        body: formData,
+      });
+      const blob = await res.blob();
+      download(blob, `encrypted_${name}`, type);
+      setUploading(false);
+      setUploadingError(false);
+    } catch (e) {
+      setUploading(false);
+      setUploadingError(true);
+    }
+    setOpenPopup(true);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length >= 1) {
-      setFile(e.target.files[0]);
+      setSuccess(true);
     }
   };
 
@@ -144,8 +168,29 @@ export default function CryptForm() {
     return true;
   };
 
+  const validateInput = (input: string, type: string): boolean | string => {
+    if (!input) return "This field is required";
+    switch (type) {
+      case "key":
+        if (input.length !== algorithms[algo].keyLength)
+          return `Salt should have the length of ${algorithms[algo].ivLength}`;
+      case "salt":
+        if (input.length !== algorithms[algo].ivLength)
+          return `Salt should have the length of ${algorithms[algo].ivLength}`;
+      default:
+        return true;
+    }
+  };
 
-  if (error) return <h2>Error</h2>;
+  const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setOpenPopup(false);
+  };
+
+  if (error) return <Alert severity="error">An error occurred! Please retry later.</Alert>;
 
   if (loading)
     return (
@@ -159,20 +204,19 @@ export default function CryptForm() {
       style={{ display: "flex", flexDirection: "column" }}
       onSubmit={handleSubmit(onSubmit)}
     >
+      <InfoPopup
+        open={openPopup}
+        duration={2000}
+        handleClose={handleClose}
+        error={uploadingError}
+      />
       <TextField
         required
         name="key"
         error={!!errors.key}
         helperText={errors.key ? errors.key.message : null}
         inputRef={register({
-          required: true,
-          minLength: algo ? algorithms[algo].keyLength : 0,
-          maxLength: {
-            value: algo ? algorithms[algo].keyLength : 100,
-            message: algo
-              ? `Key should have the length of ${algorithms[algo].keyLength}`
-              : "Please choose the ecnryption algorithm",
-          },
+          validate: (inp) => validateInput(inp, "key"),
         })}
         label={`Key ${
           algo ? `(${algorithms[algo].keyLength} characters)` : ""
@@ -185,14 +229,7 @@ export default function CryptForm() {
         error={!!errors.salt}
         helperText={errors.salt ? errors.salt.message : null}
         inputRef={register({
-          required: true,
-          minLength: algo ? algorithms[algo].ivLength : 0,
-          maxLength: {
-            value: algo ? algorithms[algo].ivLength : 100,
-            message: algo
-              ? `Salt should have the length of ${algorithms[algo].ivLength}`
-              : "Please choose the ecnryption algorithm",
-          },
+          validate: (inp) => validateInput(inp, "salt"),
         })}
         label={`Salt ${
           algo ? `(${algorithms[algo].ivLength} characters)` : ""
@@ -206,7 +243,10 @@ export default function CryptForm() {
           control={control}
           name="algo"
           defaultValue=""
-          onChange={(e:any) => {console.log(e);return e}}
+          onChange={(e: any) => {
+            console.log(e);
+            return e;
+          }}
           rules={{ required: "Select algorithm" }}
         >
           {Object.keys(algorithms).map((algo) => (
@@ -234,7 +274,9 @@ export default function CryptForm() {
             className={
               errors.file
                 ? classes.buttonError
-                : getValues("file") && getValues("file").length > 0 ? classes.fileSuccess : ""
+                : getValues("file") && getValues("file").length > 0
+                ? classes.fileSuccess
+                : ""
             }
             component="span"
             variant="outlined"
@@ -252,13 +294,12 @@ export default function CryptForm() {
         <Button
           variant="contained"
           color="primary"
-          className={success ? classes.buttonSuccess : ""}
-          disabled={loading}
+          disabled={uploading}
           type="submit"
         >
           Encrypt file!
         </Button>
-        {loading && (
+        {uploading && (
           <CircularProgress size={24} className={classes.buttonProgress} />
         )}
       </div>
