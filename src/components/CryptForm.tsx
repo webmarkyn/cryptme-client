@@ -170,16 +170,21 @@ export default function CryptForm() {
 
   const validateInput = (input: string, type: string): boolean | string => {
     if (!input) return "This field is required";
+    if (!algo) return true;
     switch (type) {
       case "key":
         if (input.length !== algorithms[algo].keyLength)
-          return `Salt should have the length of ${algorithms[algo].ivLength}`;
+          return `Key should have the length of ${algorithms[algo].keyLength}`;
+          break;
       case "salt":
         if (input.length !== algorithms[algo].ivLength)
           return `Salt should have the length of ${algorithms[algo].ivLength}`;
+          break;
       default:
         return true;
+        break;
     }
+    return true;
   };
 
   const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
