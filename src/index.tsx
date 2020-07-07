@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import App from './components/App';
 import {createMuiTheme, CssBaseline, responsiveFontSizes, ThemeProvider} from "@material-ui/core";
 import * as serviceWorker from './serviceWorker';
-import { green, blue, cyan, yellow } from '@material-ui/core/colors';
+import { cyan, yellow } from '@material-ui/core/colors';
 
 let theme = createMuiTheme({
   palette: {

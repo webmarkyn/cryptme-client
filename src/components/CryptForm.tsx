@@ -17,8 +17,9 @@ import { useForm, Controller } from "react-hook-form";
 import { green, red } from "@material-ui/core/colors";
 import { SubmitHandler } from "react-hook-form/dist/types/form";
 import useUpdateEffect from "../hooks/useUpdateEffect";
-import Alert from '@material-ui/lab/Alert';
+import Alert from "@material-ui/lab/Alert";
 import InfoPopup from "./InfoPopup";
+import { cryptApiContext } from "../context";
 
 type AlgoList = {
   [key: string]: {
@@ -76,8 +77,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function CryptForm() {
+type Props = {
+  title: string;
+  cryptMethod: ({}: FormInputs) => Promise<Blob>
+};
+
+export default function CryptForm({ title, cryptMethod }: Props) {
   const classes = useStyles();
+  const cryptApi = React.useContext(cryptApiContext);
   const [loading, setLoading] = React.useState(true);
   const [uploading, setUploading] = React.useState(false);
   const [, setSuccess] = React.useState(false);
@@ -103,8 +110,7 @@ export default function CryptForm() {
   const loadAlgorithms = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:3000/api/algorithms");
-      const data: AlgoList = await response.json();
+      const data = await cryptApi.loadAlgorithms();
       setAlgorithms(data);
       setLoading(false);
     } catch (e) {
@@ -135,18 +141,14 @@ export default function CryptForm() {
     setUploading(true);
     setUploadingError(false);
     try {
-      const formData = new FormData();
       const { name, type } = file[0];
-      formData.append("key", key);
-      formData.append("salt", salt);
-      formData.append("algo", algo);
-      formData.append("file", file[0] as File);
-      const res = await fetch("http://127.0.0.1:3000/api/encrypt", {
-        method: "POST",
-        body: formData,
+      const blob = await cryptMethod({
+        key,
+        salt,
+        file: file as FileList,
+        algo,
       });
-      const blob = await res.blob();
-      download(blob, `encrypted_${name}`, type);
+      download(blob, `${name}`, type);
       setUploading(false);
       setUploadingError(false);
     } catch (e) {
@@ -175,11 +177,11 @@ export default function CryptForm() {
       case "key":
         if (input.length !== algorithms[algo].keyLength)
           return `Key should have the length of ${algorithms[algo].keyLength}`;
-          break;
+        break;
       case "salt":
         if (input.length !== algorithms[algo].ivLength)
           return `Salt should have the length of ${algorithms[algo].ivLength}`;
-          break;
+        break;
       default:
         return true;
         break;
@@ -195,7 +197,10 @@ export default function CryptForm() {
     setOpenPopup(false);
   };
 
-  if (error) return <Alert severity="error">An error occurred! Please retry later.</Alert>;
+  if (error)
+    return (
+      <Alert severity="error">An error occurred! Please retry later.</Alert>
+    );
 
   if (loading)
     return (
@@ -302,7 +307,7 @@ export default function CryptForm() {
           disabled={uploading}
           type="submit"
         >
-          Encrypt file!
+          {title}
         </Button>
         {uploading && (
           <CircularProgress size={24} className={classes.buttonProgress} />
