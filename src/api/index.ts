@@ -51,7 +51,7 @@ export default class CryptApi implements CryptApiInterface {
   };
 
   loadAlgorithms = async () => {
-    const response = await fetch("http://127.0.0.1:3000/api/algorithms");
+    const response = await fetch(`${this.endpoint}/algorithms`);
     const data: AlgoList = await response.json();
     return data;
   };
