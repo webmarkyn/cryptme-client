@@ -14,7 +14,7 @@ import {
   FormHelperText,
 } from "@material-ui/core";
 import { useForm, Controller } from "react-hook-form";
-import { green, red } from "@material-ui/core/colors";
+import { green, red, yellow } from "@material-ui/core/colors";
 import { SubmitHandler } from "react-hook-form/dist/types/form";
 import useUpdateEffect from "../hooks/useUpdateEffect";
 import Alert from "@material-ui/lab/Alert";
@@ -55,13 +55,21 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: green[700],
     },
   },
-  buttonProgress: {
+  spinnerProgress: {
     color: green[500],
     position: "absolute",
     top: "50%",
     left: "50%",
     marginTop: -12,
     marginLeft: -24,
+  },
+  buttonProgress: {
+    color: yellow[300],
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    marginTop: -12,
+    marginLeft: -12,
   },
   fileSuccess: {
     borderColor: green[300],
@@ -205,7 +213,7 @@ export default function CryptForm({ title, cryptMethod }: Props) {
   if (loading)
     return (
       <Box className={classes.loadingWrapper}>
-        <CircularProgress size={56} className={classes.buttonProgress} />
+        <CircularProgress size={56} className={classes.spinnerProgress} />
       </Box>
     );
 
