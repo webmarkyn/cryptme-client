@@ -2,7 +2,6 @@ import React from "react";
 import download from "downloadjs";
 import {
   FormControl,
-  Input,
   InputLabel,
   TextField,
   MenuItem,
@@ -20,6 +19,7 @@ import useUpdateEffect from "../hooks/useUpdateEffect";
 import Alert from "@material-ui/lab/Alert";
 import InfoPopup from "./InfoPopup";
 import { cryptApiContext } from "../context";
+import randomString from "randomstring";
 
 type AlgoList = {
   [key: string]: {
@@ -83,6 +83,18 @@ const useStyles = makeStyles((theme) => ({
     height: "200px",
     position: "relative",
   },
+  box: {
+    display: 'flex',
+    alignContent: 'center',
+    alignItems: 'center',
+    '&>.MuiFormControl-root': {
+      flex: 2
+    },
+    '&>button': {
+      flex: 1,
+      marginLeft: theme.spacing(3),
+    }
+  },
 }));
 
 type Props = {
@@ -99,7 +111,7 @@ export default function CryptForm({ title, cryptMethod }: Props) {
   const [openPopup, setOpenPopup] = React.useState(false);
   const [uploadingError, setUploadingError] = React.useState(false);
   const [algorithms, setAlgorithms] = React.useState<AlgoList>({});
-  const [error, setError] = React.useState(false);
+  const [error, setLocalError] = React.useState(false);
   const {
     register,
     handleSubmit,
@@ -108,12 +120,15 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     control,
     getValues,
     trigger,
+    setError,
+    setValue
   } = useForm<FormInputs>({
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
   const algoInput = watch("algo");
   const [algo, setAlgo] = React.useState(algoInput);
+  console.log(algo)
 
   const loadAlgorithms = async () => {
     setLoading(true);
@@ -122,7 +137,7 @@ export default function CryptForm({ title, cryptMethod }: Props) {
       setAlgorithms(data);
       setLoading(false);
     } catch (e) {
-      setError(true);
+      setLocalError(true);
       setLoading(false);
     }
   };
@@ -197,6 +212,12 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     return true;
   };
 
+  const generateRndValue = (inp: "key" | "salt") => {
+    const algo = getValues("algo")
+      const len = inp ===  'key' ? algorithms[algo].keyLength : algorithms[algo].ivLength;
+      setValue(inp, randomString.generate(len))
+  }
+
   const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
     if (reason === "clickaway") {
       return;
@@ -228,32 +249,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         handleClose={handleClose}
         error={uploadingError}
       />
-      <TextField
-        required
-        name="key"
-        error={!!errors.key}
-        helperText={errors.key ? errors.key.message : null}
-        inputRef={register({
-          validate: (inp) => validateInput(inp, "key"),
-        })}
-        label={`Key ${
-          algo ? `(${algorithms[algo].keyLength} characters)` : ""
-        }`}
-        margin="normal"
-      />
-      <TextField
-        required
-        name="salt"
-        error={!!errors.salt}
-        helperText={errors.salt ? errors.salt.message : null}
-        inputRef={register({
-          validate: (inp) => validateInput(inp, "salt"),
-        })}
-        label={`Salt ${
-          algo ? `(${algorithms[algo].ivLength} characters)` : ""
-        }`}
-        margin="normal"
-      />
       <FormControl className={classes.formControl} error={!!errors.algo}>
         <InputLabel>Encryption Algorithm</InputLabel>
         <Controller
@@ -275,6 +270,39 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         </Controller>
         <FormHelperText>{errors.algo && errors.algo.message}</FormHelperText>
       </FormControl>
+      <Box className={classes.box}>
+        <TextField
+          required
+          name="key"
+          error={!!errors.key}
+          helperText={errors.key ? errors.key.message : null}
+          inputRef={register({
+            validate: (inp) => validateInput(inp, "key"),
+          })}
+          label={`Key ${
+            algo ? `(${algorithms[algo].keyLength} characters)` : ""
+          }`}
+          margin="normal"
+        />
+        <Button disabled={algo === "algo" || !algo} variant="outlined" onClick={() => generateRndValue("key")} color="primary">Generate</Button>
+      </Box>
+      <Box className={classes.box}>
+        <TextField
+          required
+          name="salt"
+          error={!!errors.salt}
+          helperText={errors.salt ? errors.salt.message : null}
+          inputRef={register({
+            validate: (inp) => validateInput(inp, "salt"),
+          })}
+          label={`Salt ${
+            algo ? `(${algorithms[algo].ivLength} characters)` : ""
+          }`}
+          margin="normal"
+          
+        />
+        <Button variant="outlined" color="primary" disabled={algo === "algo" || !algo} onClick={() => generateRndValue("salt")}>Generate</Button>
+      </Box>
       <Box margin={4}>
         <input
           id="raised-button-file"
