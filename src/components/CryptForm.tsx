@@ -84,22 +84,22 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
   },
   box: {
-    display: 'flex',
-    alignContent: 'center',
-    alignItems: 'center',
-    '&>.MuiFormControl-root': {
-      flex: 2
+    display: "flex",
+    alignContent: "center",
+    alignItems: "center",
+    "&>.MuiFormControl-root": {
+      flex: 2,
     },
-    '&>button': {
+    "&>button": {
       flex: 1,
       marginLeft: theme.spacing(3),
-    }
+    },
   },
 }));
 
 type Props = {
   title: string;
-  cryptMethod: ({}: FormInputs) => Promise<Blob>
+  cryptMethod: ({}: FormInputs) => Promise<Blob>;
 };
 
 export default function CryptForm({ title, cryptMethod }: Props) {
@@ -121,14 +121,14 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     getValues,
     trigger,
     setError,
-    setValue
+    setValue,
   } = useForm<FormInputs>({
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
   const algoInput = watch("algo");
   const [algo, setAlgo] = React.useState(algoInput);
-  console.log(algo)
+  console.log(algo);
 
   const loadAlgorithms = async () => {
     setLoading(true);
@@ -213,10 +213,11 @@ export default function CryptForm({ title, cryptMethod }: Props) {
   };
 
   const generateRndValue = (inp: "key" | "salt") => {
-    const algo = getValues("algo")
-      const len = inp ===  'key' ? algorithms[algo].keyLength : algorithms[algo].ivLength;
-      setValue(inp, randomString.generate(len))
-  }
+    const algo = getValues("algo");
+    const len =
+      inp === "key" ? algorithms[algo].keyLength : algorithms[algo].ivLength;
+    setValue(inp, randomString.generate(len));
+  };
 
   const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
     if (reason === "clickaway") {
@@ -256,10 +257,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
           control={control}
           name="algo"
           defaultValue=""
-          onChange={(e: any) => {
-            console.log(e);
-            return e;
-          }}
           rules={{ required: "Select algorithm" }}
         >
           {Object.keys(algorithms).map((algo) => (
@@ -272,36 +269,53 @@ export default function CryptForm({ title, cryptMethod }: Props) {
       </FormControl>
       <Box className={classes.box}>
         <TextField
-          required
-          name="key"
-          error={!!errors.key}
-          helperText={errors.key ? errors.key.message : null}
-          inputRef={register({
-            validate: (inp) => validateInput(inp, "key"),
-          })}
           label={`Key ${
             algo ? `(${algorithms[algo].keyLength} characters)` : ""
           }`}
+          error={!!errors.key}
+          helperText={errors.key ? errors.key.message : null}
+          name="key"
+          inputRef={register({
+            validate: (inp) => validateInput(inp, "key"),
+          })}
           margin="normal"
+          InputLabelProps={{
+            shrink: true,
+          }}
         />
-        <Button disabled={algo === "algo" || !algo} variant="outlined" onClick={() => generateRndValue("key")} color="primary">Generate</Button>
+        <Button
+          disabled={algo === "algo" || !algo}
+          variant="outlined"
+          onClick={() => generateRndValue("key")}
+          color="primary"
+        >
+          Generate
+        </Button>
       </Box>
       <Box className={classes.box}>
         <TextField
-          required
-          name="salt"
-          error={!!errors.salt}
-          helperText={errors.salt ? errors.salt.message : null}
-          inputRef={register({
-            validate: (inp) => validateInput(inp, "salt"),
-          })}
           label={`Salt ${
             algo ? `(${algorithms[algo].ivLength} characters)` : ""
           }`}
+          error={!!errors.salt}
+          helperText={errors.salt ? errors.salt.message : null}
+          name="salt"
+          inputRef={register({
+            validate: (inp) => validateInput(inp, "salt"),
+          })}
           margin="normal"
-          
+          InputLabelProps={{
+            shrink: true,
+          }}
         />
-        <Button variant="outlined" color="primary" disabled={algo === "algo" || !algo} onClick={() => generateRndValue("salt")}>Generate</Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          disabled={algo === "algo" || !algo}
+          onClick={() => generateRndValue("salt")}
+        >
+          Generate
+        </Button>
       </Box>
       <Box margin={4}>
         <input
