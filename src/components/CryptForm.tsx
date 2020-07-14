@@ -20,6 +20,8 @@ import Alert from "@material-ui/lab/Alert";
 import InfoPopup from "./InfoPopup";
 import { cryptApiContext } from "../context";
 import randomString from "randomstring";
+import SecureInput from "./SecureInput";
+import FileInput from "./FileInput";
 
 type AlgoList = {
   [key: string]: {
@@ -83,18 +85,6 @@ const useStyles = makeStyles((theme) => ({
     height: "200px",
     position: "relative",
   },
-  box: {
-    display: "flex",
-    alignContent: "center",
-    alignItems: "center",
-    "&>.MuiFormControl-root": {
-      flex: 2,
-    },
-    "&>button": {
-      flex: 1,
-      marginLeft: theme.spacing(3),
-    },
-  },
 }));
 
 type Props = {
@@ -120,7 +110,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     control,
     getValues,
     trigger,
-    setError,
     setValue,
   } = useForm<FormInputs>({
     mode: "onSubmit",
@@ -185,12 +174,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     if (e.target.files && e.target.files.length >= 1) {
       setSuccess(true);
     }
-  };
-
-  const validateFile = (input: FileList | undefined): boolean | string => {
-    if (!input || input.length === 0) return "Please upload the file";
-    if (input[0].size > 41943040) return "Files size shoudn't exceed 5mb";
-    return true;
   };
 
   const validateInput = (input: string, type: string): boolean | string => {
@@ -268,89 +251,29 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         </Controller>
         <FormHelperText>{errors.algo && errors.algo.message}</FormHelperText>
       </FormControl>
-      <Box className={classes.box}>
-        <TextField
-          label={`Key ${
-            algo ? `(${algorithms[algo].keyLength} characters)` : ""
-          }`}
-          error={!!errors.key}
-          helperText={errors.key ? errors.key.message : null}
-          name="key"
-          inputRef={register({
-            validate: (inp) => validateInput(inp, "key"),
-          })}
-          margin="normal"
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-        <Button
-          disabled={algo === "algo" || !algo}
-          variant="outlined"
-          onClick={() => generateRndValue("key")}
-          color="primary"
-        >
-          Generate
-        </Button>
-      </Box>
-      <Box className={classes.box}>
-        <TextField
-          label={`Salt ${
-            algo ? `(${algorithms[algo].ivLength} characters)` : ""
-          }`}
-          error={!!errors.salt}
-          helperText={errors.salt ? errors.salt.message : null}
-          name="salt"
-          inputRef={register({
-            validate: (inp) => validateInput(inp, "salt"),
-          })}
-          margin="normal"
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-        <Button
-          variant="outlined"
-          color="primary"
-          disabled={algo === "algo" || !algo}
-          onClick={() => generateRndValue("salt")}
-        >
-          Generate
-        </Button>
-      </Box>
-      <Box margin={4}>
-        <input
-          id="raised-button-file"
-          multiple
-          name="file"
-          type="file"
-          style={{ display: "none" }}
-          onChange={handleFileUpload}
-          ref={register({
-            validate: validateFile,
-          })}
-        />
-        <InputLabel htmlFor="raised-button-file">
-          <Button
-            className={
-              errors.file
-                ? classes.buttonError
-                : getValues("file") && getValues("file").length > 0
-                ? classes.fileSuccess
-                : ""
-            }
-            component="span"
-            variant="outlined"
-            color="primary"
-            fullWidth
-          >
-            Upload File
-          </Button>
-        </InputLabel>
-        <FormControl error={!!errors.file}>
-          <FormHelperText>{errors.file && errors.file.message}</FormHelperText>
-        </FormControl>
-      </Box>
+      <SecureInput
+        name="key"
+        algo={algo}
+        register={register}
+        rules={{
+          validate: (inp) => validateInput(inp, "key"),
+        }}
+        length={algo ? algorithms[algo].keyLength : 0}
+        errors={errors.key}
+        onGenerate={() => generateRndValue("key")}
+      />
+      <SecureInput
+        name="salt"
+        algo={algo}
+        register={register}
+        rules={{
+          validate: (inp) => validateInput(inp, "salt"),
+        }}
+        length={algo ? algorithms[algo].ivLength : 0}
+        errors={errors.salt}
+        onGenerate={() => generateRndValue("salt")}
+      />
+      <FileInput name="file" maxSize={41943040} errors={errors.file} onFileUpload={handleFileUpload} register={register} value={getValues("file") as FileList} />
       <div className={classes.wrapper}>
         <Button
           variant="contained"
