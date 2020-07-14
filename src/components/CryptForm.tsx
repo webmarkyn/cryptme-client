@@ -214,9 +214,10 @@ export default function CryptForm({ title, cryptMethod }: Props) {
 
   const generateRndValue = (inp: "key" | "salt") => {
     const algo = getValues("algo");
-    const len =
-      inp === "key" ? algorithms[algo].keyLength : algorithms[algo].ivLength;
+    const isKey = inp === "key";
+    const len = isKey ? algorithms[algo].keyLength : algorithms[algo].ivLength;
     setValue(inp, randomString.generate(len));
+    trigger(inp);
   };
 
   const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
