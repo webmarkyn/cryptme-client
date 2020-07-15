@@ -111,7 +111,7 @@ export default function CryptForm({ title, cryptMethod, showPopup }: Props) {
       const prevHistory = localStorage.history || "{}";
       localStorage.history = JSON.stringify({
         [new Date().toString()]: { name, key, salt, algo },
-        ...JSON.parse(prevHistory)
+        ...Object.entries(JSON.parse(prevHistory)).slice(19),
       });
       showPopup();
     } catch (e) {
