@@ -32,7 +32,6 @@ export default class CryptApi implements CryptApiInterface {
   ) => {
     try {
       const path = decrypt ? "/decrypt" : "/encrypt";
-      console.log(path);
       const formData = new FormData();
       formData.append("key", key);
       formData.append("salt", salt);

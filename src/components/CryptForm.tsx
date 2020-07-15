@@ -38,17 +38,16 @@ type FormInputs = {
 
 type Props = {
   title: string;
+  showPopup: (error?: boolean) => void;
   cryptMethod: ({}: FormInputs) => Promise<Blob>;
 };
 
-export default function CryptForm({ title, cryptMethod }: Props) {
+export default function CryptForm({ title, cryptMethod, showPopup }: Props) {
   const classes = useFormStyles();
   const cryptApi = React.useContext(cryptApiContext);
   const [loading, setLoading] = React.useState(true);
   const [uploading, setUploading] = React.useState(false);
   const [, setSuccess] = React.useState(false);
-  const [openPopup, setOpenPopup] = React.useState(false);
-  const [uploadingError, setUploadingError] = React.useState(false);
   const [algorithms, setAlgorithms] = React.useState<AlgoList>({});
   const [error, setLocalError] = React.useState(false);
   const {
@@ -66,7 +65,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
   });
   const algoInput = watch("algo");
   const [algo, setAlgo] = React.useState(algoInput);
-  console.log(algo);
 
   const loadAlgorithms = async () => {
     setLoading(true);
@@ -100,7 +98,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     file,
   }) => {
     setUploading(true);
-    setUploadingError(false);
     try {
       const { name, type } = file[0];
       const blob = await cryptMethod({
@@ -109,14 +106,18 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         file: file as FileList,
         algo,
       });
-      download(blob, `${name}`, type);
       setUploading(false);
-      setUploadingError(false);
+      download(blob, `${name}`, type);
+      const prevHistory = localStorage.history || "{}";
+      localStorage.history = JSON.stringify({
+        [new Date().toString()]: { name, key, salt, algo },
+        ...JSON.parse(prevHistory)
+      });
+      showPopup();
     } catch (e) {
       setUploading(false);
-      setUploadingError(true);
+      showPopup(true);
     }
-    setOpenPopup(true);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +140,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         break;
       default:
         return true;
-        break;
     }
     return true;
   };
@@ -150,14 +150,6 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     const len = isKey ? algorithms[algo].keyLength : algorithms[algo].ivLength;
     setValue(inp, randomString.generate(len));
     trigger(inp);
-  };
-
-  const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
-    if (reason === "clickaway") {
-      return;
-    }
-
-    setOpenPopup(false);
   };
 
   if (error)
@@ -173,76 +165,72 @@ export default function CryptForm({ title, cryptMethod }: Props) {
     );
 
   return (
-    <form
-      style={{ display: "flex", flexDirection: "column" }}
-      onSubmit={handleSubmit(onSubmit)}
-    >
-      <InfoPopup
-        open={openPopup}
-        duration={2000}
-        handleClose={handleClose}
-        error={uploadingError}
-      />
-      <FormControl className={classes.formControl} error={!!errors.algo}>
-        <InputLabel>Encryption Algorithm</InputLabel>
-        <Controller
-          as={Select}
-          control={control}
-          name="algo"
-          defaultValue=""
-          rules={{ required: "Select algorithm" }}
-        >
-          {Object.keys(algorithms).map((algo) => (
-            <MenuItem value={algo} key={algo}>
-              {algo}
-            </MenuItem>
-          ))}
-        </Controller>
-        <FormHelperText>{errors.algo && errors.algo.message}</FormHelperText>
-      </FormControl>
-      <SecureInput
-        name="key"
-        algo={algo}
-        register={register}
-        rules={{
-          validate: (inp) => validateInput(inp, "key"),
-        }}
-        length={algo ? algorithms[algo].keyLength : 0}
-        errors={errors.key}
-        onGenerate={() => generateRndValue("key")}
-      />
-      <SecureInput
-        name="salt"
-        algo={algo}
-        register={register}
-        rules={{
-          validate: (inp) => validateInput(inp, "salt"),
-        }}
-        length={algo ? algorithms[algo].ivLength : 0}
-        errors={errors.salt}
-        onGenerate={() => generateRndValue("salt")}
-      />
-      <FileInput
-        name="file"
-        maxSize={41943040}
-        errors={errors.file}
-        onFileUpload={handleFileUpload}
-        register={register}
-        value={getValues("file") as FileList}
-      />
-      <div className={classes.wrapper}>
-        <Button
-          variant="contained"
-          color="primary"
-          disabled={uploading}
-          type="submit"
-        >
-          {title}
-        </Button>
-        {uploading && (
-          <CircularProgress size={24} className={classes.buttonProgress} />
-        )}
-      </div>
-    </form>
+    <div>
+      <form
+        style={{ display: "flex", flexDirection: "column" }}
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <FormControl className={classes.formControl} error={!!errors.algo}>
+          <InputLabel>Encryption Algorithm</InputLabel>
+          <Controller
+            as={Select}
+            control={control}
+            name="algo"
+            defaultValue=""
+            rules={{ required: "Select algorithm" }}
+          >
+            {Object.keys(algorithms).map((algo) => (
+              <MenuItem value={algo} key={algo}>
+                {algo}
+              </MenuItem>
+            ))}
+          </Controller>
+          <FormHelperText>{errors.algo && errors.algo.message}</FormHelperText>
+        </FormControl>
+        <SecureInput
+          name="key"
+          algo={algo}
+          register={register}
+          rules={{
+            validate: (inp) => validateInput(inp, "key"),
+          }}
+          length={algo ? algorithms[algo].keyLength : 0}
+          errors={errors.key}
+          onGenerate={() => generateRndValue("key")}
+        />
+        <SecureInput
+          name="salt"
+          algo={algo}
+          register={register}
+          rules={{
+            validate: (inp) => validateInput(inp, "salt"),
+          }}
+          length={algo ? algorithms[algo].ivLength : 0}
+          errors={errors.salt}
+          onGenerate={() => generateRndValue("salt")}
+        />
+        <FileInput
+          name="file"
+          maxSize={41943040}
+          errors={errors.file}
+          onFileUpload={handleFileUpload}
+          register={register}
+          value={getValues("file") as FileList}
+        />
+        <div className={classes.wrapper}>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={uploading}
+            type="submit"
+          >
+            {title}
+          </Button>
+          {uploading && (
+            <CircularProgress size={24} className={classes.buttonProgress} />
+          )}
+        </div>
+      </form>
+    </div>
   );
 }
