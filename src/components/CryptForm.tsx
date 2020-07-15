@@ -3,7 +3,6 @@ import download from "downloadjs";
 import {
   FormControl,
   InputLabel,
-  TextField,
   MenuItem,
   Select,
   makeStyles,
@@ -13,7 +12,6 @@ import {
   FormHelperText,
 } from "@material-ui/core";
 import { useForm, Controller } from "react-hook-form";
-import { green, red, yellow } from "@material-ui/core/colors";
 import { SubmitHandler } from "react-hook-form/dist/types/form";
 import useUpdateEffect from "../hooks/useUpdateEffect";
 import Alert from "@material-ui/lab/Alert";
@@ -22,6 +20,7 @@ import { cryptApiContext } from "../context";
 import randomString from "randomstring";
 import SecureInput from "./SecureInput";
 import FileInput from "./FileInput";
+import useFormStyles from "../styles/cryptFormStyles";
 
 type AlgoList = {
   [key: string]: {
@@ -37,63 +36,13 @@ type FormInputs = {
   file: FileList;
 };
 
-const useStyles = makeStyles((theme) => ({
-  formControl: {
-    minWidth: 120,
-    marginTop: theme.spacing(1),
-  },
-  selectEmpty: {
-    marginTop: theme.spacing(0),
-  },
-  wrapper: {
-    margin: theme.spacing(1),
-    position: "relative",
-    display: "flex",
-    justifyContent: "center",
-  },
-  buttonSuccess: {
-    backgroundColor: green[500],
-    "&:hover": {
-      backgroundColor: green[700],
-    },
-  },
-  spinnerProgress: {
-    color: green[500],
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    marginTop: -12,
-    marginLeft: -24,
-  },
-  buttonProgress: {
-    color: yellow[300],
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    marginTop: -12,
-    marginLeft: -12,
-  },
-  fileSuccess: {
-    borderColor: green[300],
-    color: green[100],
-  },
-  buttonError: {
-    color: red[500],
-    borderColor: red[500],
-  },
-  loadingWrapper: {
-    height: "200px",
-    position: "relative",
-  },
-}));
-
 type Props = {
   title: string;
   cryptMethod: ({}: FormInputs) => Promise<Blob>;
 };
 
 export default function CryptForm({ title, cryptMethod }: Props) {
-  const classes = useStyles();
+  const classes = useFormStyles();
   const cryptApi = React.useContext(cryptApiContext);
   const [loading, setLoading] = React.useState(true);
   const [uploading, setUploading] = React.useState(false);
@@ -273,7 +222,14 @@ export default function CryptForm({ title, cryptMethod }: Props) {
         errors={errors.salt}
         onGenerate={() => generateRndValue("salt")}
       />
-      <FileInput name="file" maxSize={41943040} errors={errors.file} onFileUpload={handleFileUpload} register={register} value={getValues("file") as FileList} />
+      <FileInput
+        name="file"
+        maxSize={41943040}
+        errors={errors.file}
+        onFileUpload={handleFileUpload}
+        register={register}
+        value={getValues("file") as FileList}
+      />
       <div className={classes.wrapper}>
         <Button
           variant="contained"
