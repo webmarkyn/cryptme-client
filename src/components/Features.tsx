@@ -5,6 +5,7 @@ import SwipeableViews from "react-swipeable-views";
 import CryptForm from "./CryptForm";
 import { cryptApiContext } from "../context";
 import InfoPopup from "./InfoPopup";
+import History from "./History";
 
 export default function Features() {
   const [value, setValue] = useState(0);
@@ -74,8 +75,9 @@ export default function Features() {
         <TabPanel value={value} index={2}>
           <div>
             <Typography align="center" variant="h6">
-              In progress
+              History
             </Typography>
+            <History />
           </div>
         </TabPanel>
       </SwipeableViews>

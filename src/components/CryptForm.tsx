@@ -108,10 +108,13 @@ export default function CryptForm({ title, cryptMethod, showPopup }: Props) {
       });
       setUploading(false);
       download(blob, `${name}`, type);
-      const prevHistory = localStorage.history || "{}";
+      let prevHistory = localStorage.history || "{}";
+      prevHistory = JSON.parse(prevHistory);
+      prevHistory = Object.entries(prevHistory).slice(0,19);
+      prevHistory = Object.fromEntries(prevHistory);
       localStorage.history = JSON.stringify({
         [new Date().toString()]: { name, key, salt, algo },
-        ...Object.entries(JSON.parse(prevHistory)).slice(19),
+        ...prevHistory
       });
       showPopup();
     } catch (e) {
