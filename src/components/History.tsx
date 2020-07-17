@@ -1,5 +1,5 @@
 import React from "react";
-import { List, ListItem, ListItemText, Paper } from "@material-ui/core";
+import { List, ListItem, ListItemText, Paper, ListItemSecondaryAction, Button } from "@material-ui/core";
 
 type SubInfo = {
   key: string;
@@ -14,12 +14,20 @@ type HistoryItems = {
 };
 
 export default function History() {
-  let history = localStorage.history || "{}";
-  history = JSON.parse(history);
+  const [history, setHistory] = React.useState(JSON.parse(localStorage.history || "{}"))
 
   const transformDate = (date: string) => {
       const newDate = new Date(date);
-      return `${newDate.getMonth()}/${newDate.getDate()} ${newDate.getHours()}:${newDate.getMinutes()}`
+      const month = newDate.getMonth();
+      const dayDate = newDate.getDate()
+      return `${month.toString().length < 2 ? `0${month}` : month}/${dayDate.toString().length < 2 ? `0${dayDate}` : dayDate} ${newDate.getHours()}:${newDate.getMinutes()}`
+  }
+
+  const onDelete = (key: string) => {
+    const newHistory = {...history};
+    delete newHistory[key];
+    localStorage.history = JSON.stringify(newHistory);
+    setHistory(newHistory);
   }
 
   const subInfo = ({ algo, key, salt }: SubInfo) => (
@@ -43,6 +51,9 @@ export default function History() {
                 primary={`${history[key].name} - ${transformDate(key)}`}
                 secondary={subInfo(history[key])}
               />
+                <ListItemSecondaryAction>
+                  <Button onClick={() => onDelete(key)}>Delete</Button>
+                </ListItemSecondaryAction>
               </ListItem>
             ))}      
         
