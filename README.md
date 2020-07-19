@@ -43,6 +43,4 @@ To get a local copy up and running follow these simple example steps.
 ## Future updates  
 
 - Improve UI
-- Add history
-- Add random keys generation
 
